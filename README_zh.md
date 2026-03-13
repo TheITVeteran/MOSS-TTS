@@ -34,6 +34,7 @@ MOSS‑TTS 家族是由 [MOSI.AI](https://mosi.cn/#hero) 与 [OpenMOSS 团队](h
 
 <a id="news"></a>
 ## 新闻
+* 2026.3.12：🚀 新增面向 `MossTTSDelay` 架构的 SGLang 后端支持，可用于 MOSS-TTS（Delay）和 MOSS-SoundEffect 的高效推理，生成吞吐可提升约 **3 倍**！
 * 2026.3.11：📘 新增 MossTTSDelay 架构微调教程，适用于 MOSS-TTS（Delay）、MOSS-TTSD、MOSS-VoiceGenerator 和 MOSS-SoundEffect！
 * 2026.3.10：⚡️ 大幅优化了 llama.cpp 推理管线的显存占用。现在 8B 模型可以运行在 8GB 显存的 GPU 上！
 * 2026.3.4：新增 **无 PyTorch 推理** 支持 — 通过 [llama.cpp](https://github.com/ggerganov/llama.cpp) + ONNX Runtime 实现端侧轻量部署。量化 GGUF 权重发布于 [`OpenMOSS-Team/MOSS-TTS-GGUF`](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-GGUF)，ONNX 音频编解码器发布于 [`OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX`](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX)。详见 [llama.cpp 后端](#llamacpp-后端无-pytorch-推理)。
@@ -60,6 +61,7 @@ MOSS‑TTS 家族是由 [MOSI.AI](https://mosi.cn/#hero) 与 [OpenMOSS 团队](h
   - [基础用法](#moss-tts-basic-usage)
   - [微调](#fine-tuning)
 - [llama.cpp 后端（无 PyTorch 推理）](#llamacpp-后端无-pytorch-推理)
+- [SGLang 后端（加速推理）](#sglang-后端加速推理)
 - [评测](#evaluation)
   - [MOSS-TTS 评测](#eval-moss-tts)
   - [MOSS-TTSD 评测](#eval-moss-ttsd)
@@ -409,6 +411,88 @@ python -m moss_tts_delay.llama_cpp \
 - `flash_attn: auto | enabled | disabled` — flash attention 用于降低 prefill 阶段的峰值显存
 
 完整文档请查看 [moss_tts_delay/llama_cpp/README.md](moss_tts_delay/llama_cpp/README.md)。
+
+## SGLang 后端（加速推理）
+
+MOSS-TTS（Delay）支持使用 OpenMOSS 深度扩展的 [SGLang](https://github.com/OpenMOSS/sglang) 运行融合后的 MOSS-TTS 与 MOSS-Audio-Tokenizer 模型，实现面向音频生成的 **高效推理**。
+
+### 快速开始
+
+```bash
+# 1. 克隆 SGLang 仓库
+git clone https://github.com/OpenMOSS/sglang.git
+
+# 2. 安装 SGLang
+pip install -e ./sglang/python[all]
+
+# 3. (可选) 解决 SGLang 的 CuDNN 兼容性报错
+#    RuntimeError: CRITICAL WARNING: PyTorch 2.9.1 & CuDNN Compatibility Issue Detected
+pip install nvidia-cudnn-cu12==9.16.0.29
+
+# 4. 下载模型与音频编解码器权重
+huggingface-cli download OpenMOSS-Team/MOSS-TTS --local-dir weights/MOSS-TTS
+huggingface-cli download OpenMOSS-Team/MOSS-Audio-Tokenizer --local-dir weights/MOSS-Audio-Tokenizer
+
+# 5. 融合模型与音频编解码器权重
+python scripts/fuse_moss_tts_delay_with_codec.py --model-path weights/MOSS-TTS --codec-model-path weights/MOSS-Audio-Tokenizer --save-path weights/MOSS-TTS-Delay-With-Codec
+
+# 6. 启动服务
+sglang serve --model-path weights/MOSS-TTS-Delay-With-Codec --delay-pattern --trust-remote-code
+```
+
+> 如果融合输出目录已存在，可以在命令中追加 `--overwrite` 直接覆盖，或在脚本提示后输入字符确认覆盖。
+
+> **注意：** 首次启动服务后的第一次请求会触发较长时间的编译，这不是故障，请耐心等待。
+
+### 请求与返回
+
+#### MOSS-TTS (Delay)
+
+```bash
+curl -X POST http://localhost:30000/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "新增 SGLang 后端支持，实现高效推理。",
+    "audio_data": "https://cdn.jsdelivr.net/gh/OpenMOSS/MOSS-TTSD@main/legacy/v0.7/examples/zh_spk1_moon.wav",
+    "sampling_params": {
+      "max_new_tokens": 512,
+      "temperature": 1.7,
+      "top_p": 0.8,
+      "top_k": 25
+    }
+  }'
+```
+
+- `text` 表示待合成的文本内容；可在前缀加入 `${token:25}` 进行 token 控制，例如 `${token:25}你好 世界`
+- `audio_data` 表示可选的参考音频；不传入时会生成随机音色的音频，也可以是 `<path-to-audio-file>` 或 `data:audio/wav;base64,{b64_audio}`，其中 `b64_audio` 为 wav 文件的 base64 字符串。
+
+#### MOSS-SoundEffect
+
+```bash
+curl -X POST http://localhost:30000/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "${token:125}${ambient_sound:a sports car roaring past on the highway.}",
+    "sampling_params": {
+      "max_new_tokens": 512,
+      "temperature": 1.5,
+      "top_p": 0.6,
+      "top_k": 50
+    }
+  }'
+```
+
+- `text` 中只能包含 `${token:125}` 和 `${ambient_sound:...}` 这两个字段，其中 `${ambient_sound:...}` 后填写音效的文字描述。
+- 对于 MOSS-SoundEffect，建议使用 `${token:125}`，生成会更稳定。
+- 不要传 `audio_data`，否则模型可能会 OOD。
+
+#### 返回
+
+```json
+{"text": "<wav-base64>", "...": "..."}
+```
+
+HTTP 响应为 JSON 对象，可能包含多个字段；其中 `.text` 字段存放生成音频的 wav base64 字符串。通常只需提取该字段并做 base64 解码；例如将响应保存为 `response.json` 后，可执行 `jq -r '.text' response.json | base64 -d -i > output.wav`。
 
 <a id="evaluation"></a>
 ## 评测
