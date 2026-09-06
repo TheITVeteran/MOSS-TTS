@@ -43,10 +43,26 @@
 MOSS‑TTS 家族是由 [MOSI.AI](https://mosi.cn/#hero) 与 [OpenMOSS 团队](https://www.open-moss.com/) 推出的开源 **语音与声音生成模型家族**。该系列面向 **高保真**、**高表现力** 与 **复杂真实场景** 设计，覆盖稳定长文本语音、多说话人对话、音色/角色设计、环境音效以及实时流式 TTS 等能力。
 
 <a id="news"></a>
+**从这里开始：** [快速开始](#快速开始) · [模型下载](https://huggingface.co/collections/OpenMOSS-Team/moss-tts) · [试听](#演示) · [微调](#微调) · [推理部署](#加速推理后端)
+
+### 选择适合任务的模型
+
+| 你想完成的任务 | 建议入口 |
+| --- | --- |
+| 在 CPU 或浏览器中合成语音、克隆音色 | [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano) |
+| 多语言长文本朗读、音色克隆 | [MOSS-TTS-v1.5](#moss-tts-v15) · [Local Transformer v1.5](#moss-tts-local-transformer-v15) |
+| 多角色对话、播客与配音 | [MOSS-TTSD](https://github.com/OpenMOSS/MOSS-TTSD) |
+| 实时流式语音生成 | [MOSS-TTS-Realtime](moss_tts_realtime/README.md) |
+| 设计音色或生成环境音效 | [模型概览](#模型概览) · [MOSS-SoundEffect v2](moss_soundeffect_v2/README.md) |
+
 ## 新闻
 * 2026.6.18：🚀 [MOSS-TTS-Local-Transformer-v1.5](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-Local-Transformer-v1.5) 在 [SGLang-Omni](https://github.com/sgl-project/sglang-omni) 中获得 **Day-0 支持**，这是首个支持 `MossTTSLocal` 架构的推理后端，提供 OpenAI 兼容的 `/v1/audio/speech` 接口、流式输出和音色克隆。Cookbook 请见：[`moss_tts_local`](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_tts_local.md)、[`moss_tts`](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_tts.md)。
 * 2026.6.18：🚀 发布 [MOSS-TTS-Local-Transformer-v1.5](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-Local-Transformer-v1.5)，这是一个 **4B** `MossTTSLocal` checkpoint，继承全部 v1.5 能力（语言标签、稳定音色克隆、显式停顿控制等），将 backbone 从 Qwen3-1.7B 扩展到 Qwen3-4B，并使用 **MOSS-Audio-Tokenizer-v2** 实现原生 **48 kHz 立体声** 输出。
 * 2026.6.7：🚀 发布 [MOSS-Audio-Tokenizer-v2](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer-v2)，原生支持 48 kHz 立体声输入与输出。更多详情请查看 [MOSS-Audio-Tokenizer 仓库](https://github.com/OpenMOSS/MOSS-Audio-Tokenizer)！
+
+<details>
+<summary>更早的更新</summary>
+
 * 2026.6.2：🚀 [vLLM-Omni](https://github.com/vllm-project/vllm-omni) 现已支持完整 MOSS-TTS 系列（`MossTTSDelay`、`MossTTSRealtime` 和 `MossTTSNano` 架构），包括 MOSS-TTS-v1.5、MOSS-TTS、MOSS-TTSD、MOSS-SoundEffect、MOSS-VoiceGenerator、MOSS-TTS-Realtime 和 MOSS-TTS-Nano。请查看 [recipe](https://github.com/vllm-project/vllm-omni/blob/main/recipes/OpenMOSS/MOSS-TTS.md) 与 [examples](https://github.com/vllm-project/vllm-omni/tree/main/examples/offline_inference/text_to_speech/moss_tts)。
 * 2026.5.26：🚀 发布 [MOSS-SoundEffect-v2.0](https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0)，全新文本到音频模型，采用 **DiT 主干 + Flow Matching 训练目标**，可从中英文本生成最长 **30 秒**、**48 kHz** 的音效，详见 [`moss_soundeffect_v2/`](https://github.com/OpenMOSS/MOSS-TTS/tree/main/moss_soundeffect_v2)。
 * 2026.5.26：🚀 发布 [MOSS-TTS-v1.5](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-v1.5)，在提供语言标签时多语种合成更强，voice clone 更稳定，也改进了长参考短文本克隆、标点韵律跟随，并支持通过 `[pause X.Ys]` 显式控制停顿。
@@ -64,6 +80,8 @@ MOSS‑TTS 家族是由 [MOSI.AI](https://mosi.cn/#hero) 与 [OpenMOSS 团队](h
 * 2026.3.4：新增 **无 PyTorch 推理** 支持 — 通过 [llama.cpp](https://github.com/ggerganov/llama.cpp) + ONNX Runtime 实现端侧轻量部署。量化 GGUF 权重发布于 [`OpenMOSS-Team/MOSS-TTS-GGUF`](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-GGUF)，ONNX 音频编解码器发布于 [`OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX`](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX)。详见 [llama.cpp 后端](#llamacpp-后端无-pytorch-推理)。
 * 2026.3.4：🎉 我们在 🦞 龙虾 的 [ClawHub](https://clawhub.ai) 平台上架了 MOSS-TTS skills：[feishu-voice-tts](https://clawhub.ai/helloeveryworlds/feishu-voice-tts) 与 [moss-tts-voice](https://clawhub.ai/luogao2333/moss-tts-voice)。
 * 2026.2.10：🎉🎉🎉 我们已发布 [MOSS-TTS Family](https://huggingface.co/collections/OpenMOSS-Team/moss-tts)。更多详情请查看我们的 [Blog](https://mosi.cn/#models)！我们的 Huggingface Space 在这里：[MOSS-TTS](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTS), [MOSS-TTSD-v1.0](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD-v1.0), [MOSS-VoiceGenerator](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-VoiceGenerator).
+
+</details>
 
 ## 演示
 

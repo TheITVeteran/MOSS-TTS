@@ -41,10 +41,26 @@
 MOSS‑TTS Family is an open‑source **speech and sound generation model family** from [MOSI.AI](https://mosi.cn/#hero) and the [OpenMOSS team](https://www.open-moss.com/). It is designed for **high‑fidelity**, **high‑expressiveness**, and **complex real‑world scenarios**, covering stable long‑form speech, multi‑speaker dialogue, voice/character design, environmental sound effects, and real‑time streaming TTS.
 
 
+**Start here:** [Quickstart](#quickstart) · [Model weights](https://huggingface.co/collections/OpenMOSS-Team/moss-tts) · [Listen to samples](#demo) · [Fine-tuning](#fine-tuning) · [Serving backends](#accelerated-inference-backends)
+
+### Choose a model for your task
+
+| What you want to build | Start with |
+| --- | --- |
+| Speech and voice cloning on a CPU or in a browser | [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano) |
+| Multilingual long-form narration and voice cloning | [MOSS-TTS-v1.5](#moss-tts-v15) · [Local Transformer v1.5](#moss-tts-local-transformer-v15) |
+| Multi-speaker dialogue, podcasts, and dubbing | [MOSS-TTSD](https://github.com/OpenMOSS/MOSS-TTSD) |
+| Real-time streaming speech | [MOSS-TTS-Realtime](moss_tts_realtime/README.md) |
+| Voice design or environmental sound effects | [Released models](#released-models) · [MOSS-SoundEffect v2](moss_soundeffect_v2/README.md) |
+
 ## News
 * 2026.6.18: 🚀 [MOSS-TTS-Local-Transformer-v1.5](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-Local-Transformer-v1.5) receives **Day-0 support** in [SGLang-Omni](https://github.com/sgl-project/sglang-omni) — the first inference backend to support the `MossTTSLocal` architecture, with an OpenAI-compatible `/v1/audio/speech` endpoint, streaming, and voice cloning. See the cookbooks: [`moss_tts_local`](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_tts_local.md), [`moss_tts`](https://github.com/sgl-project/sglang-omni/blob/main/docs/cookbook/moss_tts.md).
 * 2026.6.18: 🚀 Released [MOSS-TTS-Local-Transformer-v1.5](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-Local-Transformer-v1.5), a **4B** `MossTTSLocal` checkpoint that inherits all v1.5 features (language tags, stable cloning, explicit pause control, etc.), scales the backbone from Qwen3-1.7B to Qwen3-4B, and uses **MOSS-Audio-Tokenizer-v2** for native **48 kHz stereo** output.
 * 2026.6.7: 🚀 Released [MOSS-Audio-Tokenizer-v2](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer-v2), natively supporting 48 kHz stereo input and output. Check out the [MOSS-Audio-Tokenizer repository](https://github.com/OpenMOSS/MOSS-Audio-Tokenizer) for more details!
+
+<details>
+<summary>Earlier updates</summary>
+
 * 2026.6.2: 🚀 [vLLM-Omni](https://github.com/vllm-project/vllm-omni) now supports the full MOSS-TTS series (`MossTTSDelay`, `MossTTSRealtime`, and `MossTTSNano` architectures), including MOSS-TTS-v1.5, MOSS-TTS, MOSS-TTSD, MOSS-SoundEffect, MOSS-VoiceGenerator, MOSS-TTS-Realtime, and MOSS-TTS-Nano. See the [recipe](https://github.com/vllm-project/vllm-omni/blob/main/recipes/OpenMOSS/MOSS-TTS.md) and [examples](https://github.com/vllm-project/vllm-omni/tree/main/examples/offline_inference/text_to_speech/moss_tts).
 * 2026.5.26: 🚀 Released [MOSS-SoundEffect-v2.0](https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0), a new text-to-audio model using a **DiT backbone with the Flow Matching objective**, generating **48 kHz** bilingual sound effects up to **30 seconds** — see [`moss_soundeffect_v2/`](https://github.com/OpenMOSS/MOSS-TTS/tree/main/moss_soundeffect_v2).
 * 2026.5.26: 🚀 Released [MOSS-TTS-v1.5](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-v1.5), with stronger multilingual synthesis when language tags are provided, more stable voice cloning, better long-reference short-text cloning, punctuation-following prosody, and explicit pause control via `[pause X.Ys]`.
@@ -63,6 +79,7 @@ MOSS‑TTS Family is an open‑source **speech and sound generation model family
 * 2026.3.4: 🎉 We add MOSS-TTS skills in [ClawHub](https://clawhub.ai) of 🦞 OpenClaw: [feishu-voice-tts](https://clawhub.ai/helloeveryworlds/feishu-voice-tts) and [moss-tts-voice](https://clawhub.ai/luogao2333/moss-tts-voice).
 * 2026.2.10: 🎉🎉🎉 We have released [MOSS-TTS Family](https://huggingface.co/collections/OpenMOSS-Team/moss-tts). Check our [Blog](https://mosi.cn/#models) for more details! Our **Huggingface Space** is here: [MOSS-TTS](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTS), [MOSS-TTSD-v1.0](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD-v1.0), [MOSS-VoiceGenerator](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-VoiceGenerator).
 
+</details>
 
 ## Demo
 
